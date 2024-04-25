@@ -1,0 +1,80 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: 
+          - main
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up PHP
+      uses: sudo apt install php8.1-fpm php-mysql
+
+    - name: Install dependencies
+      run: npm install htmlhint-cli
+
+    - name: Lint HTML
+      run: npx htmlhint index.html
+
+    - name: Run php Lint
+      run: php -1 form.php
+
+    - name: Build Nginx Configurations
+      run: 
+           echo' server {
+                  listen 80 default_server;
+                  listen [::]:80 default_server;
+                  root /var/www/html;
+                  index index.html;
+                  server_name _;
+                  location / {
+                          try_files $uri $uri/ =404;
+                  }
+                   location ~ \.php$ {
+                          include snippets/fastcgi-php.conf;
+                          fastcgi_pass unix:/run/php/php7.4-fpm.sock;
+                          fastcgi_pass 127.0.0.1:9000;
+                        }
+                    }'
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      
+
+    - name: Run php Lint
+      run: php -1 form.php
+
+
+    - name: Run tests (optional)
+      run: |
+        # Run your test commands
+        echo "Running tests"
+
+    - name: Deploy to VM
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          cd /path/to/deployment
+          git pull
+          # Any other commands you need to run on your server
